@@ -6,7 +6,8 @@
     <title>আল্ট্রা-প্রিমিয়াম চেস - প্রো ম্যাক্স</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js" integrity="sha512-xRllwz2gdZciIB+AkEeq+wFvN8OZ/Owi535-0kS0Qapx0hS4uA5bB11QZTA66rV1G5zEIfE2y1Lg1v8ZzG1F/Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&family=Poppins:wght@400;600;800&display=swap');
 
@@ -16,7 +17,6 @@
             --highlight: rgba(255, 255, 51, 0.5);
             --bg-color: #0d1117;
             --panel-bg: rgba(55, 65, 81, 0.95); 
-            --piece-set: 'cburnett';
         }
 
         body {
@@ -64,6 +64,7 @@
             gap: -5px;
             max-width: 150px;
             align-items: center;
+            min-height: 24px;
         }
 
         .captured-piece {
@@ -89,29 +90,24 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 8px #21262d;
             overflow: hidden;
             background-color: var(--board-light);
+            transition: background-color 0.3s ease;
         }
 
-        .grid-layer {
+        .grid-layer, .interaction-layer, .pieces-layer {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             display: grid;
             grid-template-columns: repeat(8, 1fr);
             grid-template-rows: repeat(8, 1fr);
-            pointer-events: none;
         }
+
+        .grid-layer { pointer-events: none; }
+        .interaction-layer { z-index: 10; }
+        .pieces-layer { pointer-events: none; z-index: 5; display: block; } /* Fixed positioning issue */
 
         .square { width: 100%; height: 100%; }
-        .square.dark { background-color: var(--board-dark); }
-        .square.light { background-color: var(--board-light); }
-
-        .interaction-layer {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            grid-template-rows: repeat(8, 1fr);
-            z-index: 10;
-        }
+        .square.dark { background-color: var(--board-dark); transition: background-color 0.3s ease; }
+        .square.light { background-color: var(--board-light); transition: background-color 0.3s ease; }
 
         .interact-square {
             width: 100%; height: 100%;
@@ -156,13 +152,6 @@
             0% { transform: scale(0.95); opacity: 0.7; }
             50% { transform: scale(1); opacity: 1; }
             100% { transform: scale(0.95); opacity: 0.7; }
-        }
-
-        .pieces-layer {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            pointer-events: none;
-            z-index: 5;
         }
 
         .piece {
@@ -220,7 +209,7 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs text-gray-400 mb-1">গেম মোড</label>
-                        <select id="game-mode" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2.5 text-sm text-white outline-none" onchange="toggleTimer()">
+                        <select id="game-mode" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2.5 text-sm text-white outline-none" onchange="document.getElementById('time-container').classList.toggle('hidden', this.value === 'classic')">
                             <option value="classic">ক্লাসিক</option>
                             <option value="quick">কুইক (টাইমার)</option>
                         </select>
@@ -268,7 +257,7 @@
                 </div>
                 <div id="black-timer" class="text-2xl font-mono font-bold text-gray-200 hidden tracking-wider">10:00</div>
             </div>
-            <div id="black-captured" class="captured-pieces mt-2 h-6"></div>
+            <div id="black-captured" class="captured-pieces mt-2"></div>
         </div>
     </div>
 
@@ -295,16 +284,11 @@
                 </div>
                 <div id="white-timer" class="text-2xl font-mono font-bold text-gray-200 hidden tracking-wider">10:00</div>
             </div>
-            <div id="white-captured" class="captured-pieces mt-2 h-6"></div>
+            <div id="white-captured" class="captured-pieces mt-2"></div>
         </div>
     </div>
 
     <script>
-        // ডিবাগিং এর জন্য অটো অ্যালার্ট সিস্টেম
-        window.onerror = function(message, source, lineno) {
-            alert("কোডে এরর পাওয়া গেছে!\n" + message + "\nলাইন নম্বর: " + lineno);
-        };
-
         const PIECE_SETS = [
             { id: 'cburnett', name: 'Classic' },
             { id: 'alpha', name: 'Alpha' },
@@ -356,10 +340,6 @@
             return `https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/${set}/${color}${type}.svg`;
         }
 
-        function toggleTimer() {
-            document.getElementById('time-container').classList.toggle('hidden', document.getElementById('game-mode').value === 'classic');
-        }
-
         function togglePlayMode() {
             isFaceToFace = !isFaceToFace;
             const panel = document.getElementById('black-panel');
@@ -393,9 +373,10 @@
             updateInteractions(); 
         }
 
+        // স্ট্রাকচার চেঞ্জ: এই ফাংশনটি এখন সরাসরি কল হবে, কোনো ইভেন্টের অপেক্ষায় থাকবে না
         function initSettingsUI() {
             const pieceGrid = document.getElementById('piece-set-grid');
-            pieceGrid.innerHTML = ''; // ক্লিয়ার পুরনো ডেটা
+            pieceGrid.innerHTML = ''; 
             PIECE_SETS.forEach((p, i) => {
                 const btn = document.createElement('div');
                 btn.className = `piece-set-btn bg-[#0d1117] rounded p-2 flex flex-col items-center justify-center ${i === 0 ? 'active' : ''}`;
@@ -412,7 +393,7 @@
             });
 
             const themeGrid = document.getElementById('theme-grid');
-            themeGrid.innerHTML = ''; // ক্লিয়ার পুরনো ডেটা
+            themeGrid.innerHTML = ''; 
             BOARD_THEMES.forEach((t, i) => {
                 const btn = document.createElement('div');
                 btn.className = `theme-btn rounded overflow-hidden h-10 flex flex-col ${i === 0 ? 'active' : ''}`;
@@ -436,7 +417,7 @@
 
         function startGame() {
             if(typeof Chess === 'undefined') {
-                alert("ইন্টারনেট থেকে চেস লজিক লাইব্রেরিটি লোড হতে পারেনি! দয়া করে ইন্টারনেট কানেকশন চেক করে পেজটি রিলোড দিন।");
+                alert("আপনার ব্রাউজার বা ইন্টারনেট 'Chess.js' লাইব্রেরি লোড করতে পারেনি! পেজটি একবার রিলোড দিন।");
                 return;
             }
             
@@ -456,4 +437,279 @@
                 startTimer();
             }
 
-            document.getElementBy
+            document.getElementById('setup-modal').style.display = 'none';
+            setupBoard();
+        }
+
+        function setupBoard() {
+            game = new Chess(); 
+            
+            const bgGrid = document.getElementById('bg-grid');
+            const interactGrid = document.getElementById('interact-grid');
+            const piecesLayer = document.getElementById('pieces-layer');
+            
+            bgGrid.innerHTML = '';
+            interactGrid.innerHTML = '';
+            piecesLayer.innerHTML = '';
+            state.piecesData = [];
+            state.captured = { white: [], black: [] };
+            updateCapturedUI();
+
+            const boardArray = game.board();
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const bgSq = document.createElement('div');
+                    bgSq.className = `square ${(r+c)%2 === 0 ? 'light' : 'dark'}`;
+                    bgGrid.appendChild(bgSq);
+
+                    const intSq = document.createElement('div');
+                    intSq.className = 'interact-square';
+                    intSq.dataset.r = r; intSq.dataset.c = c;
+                    intSq.onclick = () => handleSquareClick(r, c);
+                    interactGrid.appendChild(intSq);
+
+                    const pieceObj = boardArray[r][c];
+                    if (pieceObj) {
+                        const id = `piece-${state.pieceIdCounter++}`;
+                        const color = pieceObj.color === 'w' ? 'white' : 'black';
+                        const char = pieceObj.color === 'w' ? pieceObj.type.toUpperCase() : pieceObj.type.toLowerCase();
+                        
+                        const pieceDiv = document.createElement('div');
+                        pieceDiv.className = 'piece';
+                        pieceDiv.id = id;
+                        pieceDiv.style.backgroundImage = `url('${getPieceUrl(char)}')`;
+                        
+                        const rotation = (color === 'black' && isFaceToFace) ? 'rotate(180deg)' : 'rotate(0deg)';
+                        pieceDiv.style.transform = `translate(${c * 100}%, ${r * 100}%) ${rotation}`;
+                        
+                        piecesLayer.appendChild(pieceDiv);
+                        state.piecesData.push({ id, r, c, color, type: char, el: pieceDiv, active: true });
+                    }
+                }
+            }
+        }
+
+        function handleSquareClick(r, c) {
+            if (state.gameOver) return;
+
+            const alg = toAlgebraic(r, c);
+            const piece = game.get(alg);
+            
+            if (piece && piece.color === game.turn()) {
+                state.selected = { r, c };
+                const moves = game.moves({ square: alg, verbose: true });
+                state.validMoves = moves.map(m => fromAlgebraic(m.to));
+                updateInteractions();
+                return;
+            }
+
+            if (state.selected) {
+                const moveAllowed = state.validMoves.find(m => m.r === r && m.c === c);
+                if (moveAllowed) {
+                    executeMove(toAlgebraic(state.selected.r, state.selected.c), alg);
+                } else {
+                    state.selected = null;
+                    state.validMoves = [];
+                    updateInteractions();
+                }
+            }
+        }
+
+        function executeMove(fromAlg, toAlg) {
+            const moves = game.moves({ verbose: true });
+            const moveObj = moves.find(m => m.from === fromAlg && m.to === toAlg);
+            if (!moveObj) return;
+
+            const move = game.move({
+                from: fromAlg,
+                to: toAlg,
+                promotion: moveObj.promotion ? 'q' : undefined 
+            });
+
+            if (!move) return;
+
+            const fromPos = fromAlgebraic(fromAlg);
+            const toPos = fromAlgebraic(toAlg);
+
+            if (move.captured) {
+                let capR = toPos.r;
+                let capC = toPos.c;
+                if (move.flags.includes('e')) {
+                    capR = move.color === 'w' ? toPos.r + 1 : toPos.r - 1;
+                }
+                const capPieceObj = state.piecesData.find(p => p.r === capR && p.c === capC && p.active);
+                if (capPieceObj) {
+                    capPieceObj.active = false;
+                    capPieceObj.el.style.opacity = '0';
+                    capPieceObj.el.style.transform += ' scale(0)';
+                    setTimeout(() => capPieceObj.el.remove(), 300);
+                }
+                
+                const turnStr = move.color === 'w' ? 'white' : 'black';
+                const capChar = move.color === 'w' ? move.captured.toLowerCase() : move.captured.toUpperCase();
+                state.captured[turnStr].push(capChar);
+                updateCapturedUI();
+            }
+
+            const pieceObj = state.piecesData.find(p => p.r === fromPos.r && p.c === fromPos.c && p.active);
+            if (pieceObj) {
+                pieceObj.r = toPos.r;
+                pieceObj.c = toPos.c;
+                const rotation = (pieceObj.color === 'black' && isFaceToFace) ? 'rotate(180deg)' : 'rotate(0deg)';
+                pieceObj.el.style.transform = `translate(${toPos.c * 100}%, ${toPos.r * 100}%) ${rotation}`;
+
+                if (move.promotion) {
+                    pieceObj.type = move.color === 'w' ? 'Q' : 'q';
+                    pieceObj.el.style.backgroundImage = `url('${getPieceUrl(pieceObj.type)}')`;
+                }
+            }
+
+            if (move.flags.includes('k') || move.flags.includes('q')) {
+                let rookFromC = move.flags.includes('k') ? 7 : 0;
+                let rookToC = move.flags.includes('k') ? 5 : 3;
+                let rookR = move.color === 'w' ? 7 : 0;
+                
+                const rookObj = state.piecesData.find(p => p.r === rookR && p.c === rookFromC && p.active);
+                if (rookObj) {
+                    rookObj.c = rookToC;
+                    const rRotation = (move.color === 'b' && isFaceToFace) ? 'rotate(180deg)' : 'rotate(0deg)';
+                    rookObj.el.style.transform = `translate(${rookToC * 100}%, ${rookR * 100}%) ${rRotation}`;
+                }
+            }
+
+            state.selected = null;
+            state.validMoves = [];
+            updateInteractions();
+            updateUIPanels();
+            checkGameOver();
+        }
+
+        function updateCapturedUI() {
+            const wCapDiv = document.getElementById('white-captured');
+            wCapDiv.innerHTML = '';
+            const pieceOrder = { 'q':1, 'r':2, 'b':3, 'n':4, 'p':5, 'Q':1, 'R':2, 'B':3, 'N':4, 'P':5 };
+            
+            state.captured.white.sort((a,b) => pieceOrder[a] - pieceOrder[b]).forEach(type => {
+                const div = document.createElement('div');
+                div.className = 'captured-piece';
+                div.style.backgroundImage = `url('${getPieceUrl(type)}')`;
+                wCapDiv.appendChild(div);
+            });
+
+            const bCapDiv = document.getElementById('black-captured');
+            bCapDiv.innerHTML = '';
+            state.captured.black.sort((a,b) => pieceOrder[a] - pieceOrder[b]).forEach(type => {
+                const div = document.createElement('div');
+                div.className = 'captured-piece';
+                div.style.backgroundImage = `url('${getPieceUrl(type)}')`;
+                div.style.transform = isFaceToFace ? 'rotate(180deg)' : 'rotate(0deg)'; 
+                bCapDiv.appendChild(div);
+            });
+        }
+
+        function updateInteractions() {
+            const cells = document.querySelectorAll('.interact-square');
+            cells.forEach(cell => {
+                cell.className = 'interact-square';
+                cell.innerHTML = '';
+                const r = parseInt(cell.dataset.r);
+                const c = parseInt(cell.dataset.c);
+                const alg = toAlgebraic(r, c);
+
+                if (state.selected && state.selected.r === r && state.selected.c === c) {
+                    cell.classList.add('selected');
+                }
+
+                const move = state.validMoves.find(m => m.r === r && m.c === c);
+                if (move && state.showHints) {
+                    const marker = document.createElement('div');
+                    marker.className = game.get(alg) ? 'valid-capture' : 'valid-dot';
+                    cell.appendChild(marker);
+                }
+
+                if (game.in_check()) {
+                    const piece = game.get(alg);
+                    if (piece && piece.type === 'k' && piece.color === game.turn()) {
+                        cell.classList.add('in-check');
+                    }
+                }
+            });
+        }
+
+        function updateUIPanels() {
+            const turnStr = game.turn() === 'w' ? 'white' : 'black';
+            const wPanel = document.getElementById('white-panel');
+            const bPanel = document.getElementById('black-panel');
+            if(turnStr === 'white') {
+                wPanel.classList.add('active-panel');
+                bPanel.classList.remove('active-panel');
+            } else {
+                bPanel.classList.add('active-panel');
+                wPanel.classList.remove('active-panel');
+            }
+        }
+
+        function startTimer() {
+            state.interval = setInterval(() => {
+                if(state.gameOver) return;
+                const turnStr = game.turn() === 'w' ? 'white' : 'black';
+                state.timers[turnStr]--;
+                updateTimerDisplay();
+                if(state.timers[turnStr] <= 0) {
+                    const winner = turnStr === 'white' ? state.players.black : state.players.white;
+                    endGame(winner, 'সময় শেষ হয়ে গেছে!');
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const format = s => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
+            document.getElementById('white-timer').innerText = format(state.timers.white);
+            document.getElementById('black-timer').innerText = format(state.timers.black);
+            
+            document.getElementById('white-timer').style.color = state.timers.white < 60 ? '#ff4d4d' : '#c9d1d9';
+            document.getElementById('black-timer').style.color = state.timers.black < 60 ? '#ff4d4d' : '#c9d1d9';
+        }
+
+        function checkGameOver() {
+            if (game.game_over()) {
+                let reason = "গেম ওভার!";
+                let winnerName = "ড্র (Draw)";
+                
+                if (game.in_checkmate()) {
+                    winnerName = game.turn() === 'w' ? state.players.black : state.players.white;
+                    reason = "চেকমেট! (Checkmate)";
+                } else if (game.in_draw()) {
+                    reason = "ম্যাচ ড্র! (Draw)";
+                } else if (game.in_stalemate()) {
+                    reason = "স্টেলমেট! (Stalemate)";
+                } else if (game.in_threefold_repetition()) {
+                    reason = "৩ বার একই পজিশন! (Repetition)";
+                }
+                endGame(winnerName, reason);
+            }
+        }
+
+        function endGame(winnerName, reason) {
+            state.gameOver = true;
+            clearInterval(state.interval);
+            const modal = document.getElementById('game-over-modal');
+            
+            if(winnerName === 'ড্র (Draw)') {
+                document.getElementById('winner-msg').innerText = winnerName;
+            } else {
+                document.getElementById('winner-msg').innerText = `${winnerName} জিতেছে!`;
+            }
+            
+            document.getElementById('reason-msg').innerText = reason;
+            modal.style.display = 'flex';
+        }
+
+        // একদম ডাইরেক্ট কল করে দিলাম, যাতে কোনোভাবেই মিস না হয়!
+        initSettingsUI();
+
+    </script>
+</body>
+</html>
+
