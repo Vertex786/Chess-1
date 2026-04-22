@@ -6,7 +6,8 @@
     <title>আল্ট্রা-প্রিমিয়াম চেস - প্রো ম্যাক্স</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js" integrity="sha512-xRllwz2gdZciIB+AkEeq+wFvN8OZ/Owi535-0kS0Qapx0hS4uA5bB11QZTA66rV1G5zEIfE2y1Lg1v8ZzG1F/Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&family=Poppins:wght@400;600;800&display=swap');
@@ -103,7 +104,7 @@
 
         .grid-layer { pointer-events: none; }
         .interaction-layer { z-index: 10; }
-        .pieces-layer { pointer-events: none; z-index: 5; display: block; } /* Fixed positioning issue */
+        .pieces-layer { pointer-events: none; z-index: 5; display: block; }
 
         .square { width: 100%; height: 100%; }
         .square.dark { background-color: var(--board-dark); transition: background-color 0.3s ease; }
@@ -373,7 +374,6 @@
             updateInteractions(); 
         }
 
-        // স্ট্রাকচার চেঞ্জ: এই ফাংশনটি এখন সরাসরি কল হবে, কোনো ইভেন্টের অপেক্ষায় থাকবে না
         function initSettingsUI() {
             const pieceGrid = document.getElementById('piece-set-grid');
             pieceGrid.innerHTML = ''; 
@@ -706,10 +706,8 @@
             modal.style.display = 'flex';
         }
 
-        // একদম ডাইরেক্ট কল করে দিলাম, যাতে কোনোভাবেই মিস না হয়!
         initSettingsUI();
 
     </script>
 </body>
 </html>
-
