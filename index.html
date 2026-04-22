@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>আল্ট্রা-প্রিমিয়াম চেস - প্রো ম্যাক্স</title>
+    <title>আল্ট্রা-প্রিমিয়াম চেস - প্রো ম্যাক্স (Pro AI)</title>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -16,15 +19,16 @@
             --board-light: #f0d9b5;
             --board-dark: #b58863;
             --highlight: rgba(255, 255, 51, 0.5);
-            --bg-color: #0d1117;
+            --bg-color: var(--tg-theme-bg-color, #0d1117);
             --panel-bg: rgba(55, 65, 81, 0.95); 
+            --text-color: var(--tg-theme-text-color, #c9d1d9);
         }
 
         body {
             font-family: 'Noto Sans Bengali', 'Poppins', sans-serif;
             background: var(--bg-color);
             background-image: radial-gradient(circle at 50% 0%, #1f2937 0%, transparent 70%);
-            color: #c9d1d9;
+            color: var(--text-color);
             margin: 0;
             padding: 0;
             height: 100vh;
@@ -196,9 +200,26 @@
             <h2 class="text-2xl font-bold mb-5 text-center text-white"><i class="fas fa-chess-king text-[#2ea043] mr-2"></i>গেম সেটিংস</h2>
             
             <div class="space-y-4 mb-5">
+                <div class="col-span-2">
+                    <label class="block text-xs text-gray-400 mb-1">কার সাথে খেলবেন?</label>
+                    <select id="opponent-mode" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2.5 text-sm text-white outline-none focus:border-[#2ea043]" onchange="toggleOpponentMode()">
+                        <option value="friend">বন্ধুর সাথে (Local)</option>
+                        <option value="computer">কম্পিউটারের সাথে (AI)</option>
+                    </select>
+                </div>
+
+                <div id="difficulty-container" class="col-span-2 hidden">
+                    <label class="block text-xs text-gray-400 mb-1">কম্পিউটারের লেভেল</label>
+                    <select id="ai-difficulty" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2.5 text-sm text-white outline-none focus:border-[#2ea043]">
+                        <option value="easy">ইজি (Easy - 1 Level Ahead)</option>
+                        <option value="medium">মিডিয়াম (Medium - 2 Levels Ahead)</option>
+                        <option value="high">হাই (High - 3 Levels Ahead)</option>
+                    </select>
+                </div>
+
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs text-gray-400 mb-1">সাদা প্লেয়ার</label>
+                        <label class="block text-xs text-gray-400 mb-1">সাদা প্লেয়ার (আপনি)</label>
                         <input type="text" id="white-name" placeholder="প্লেয়ার ১" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2.5 text-sm text-white outline-none focus:border-[#2ea043]">
                     </div>
                     <div>
@@ -290,6 +311,11 @@
     </div>
 
     <script>
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand(); 
+        }
+
         const PIECE_SETS = [
             { id: 'cburnett', name: 'Classic' },
             { id: 'alpha', name: 'Alpha' },
@@ -323,6 +349,8 @@
             validMoves: [],
             players: { white: 'সাদা', black: 'কালো' },
             mode: 'classic',
+            opponentMode: 'friend', 
+            difficulty: 'medium', 
             timers: { white: 600, black: 600 },
             interval: null,
             gameOver: false,
@@ -341,16 +369,30 @@
             return `https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/${set}/${color}${type}.svg`;
         }
 
+        function toggleOpponentMode() {
+            const isComp = document.getElementById('opponent-mode').value === 'computer';
+            document.getElementById('difficulty-container').style.display = isComp ? 'block' : 'none';
+            const blackInput = document.getElementById('black-name');
+            if (isComp) {
+                blackInput.value = 'কম্পিউটার (AI)';
+                blackInput.disabled = true;
+                blackInput.classList.add('opacity-50');
+            } else {
+                blackInput.value = '';
+                blackInput.disabled = false;
+                blackInput.classList.remove('opacity-50');
+                blackInput.placeholder = 'প্লেয়ার ২';
+            }
+        }
+
         function togglePlayMode() {
             isFaceToFace = !isFaceToFace;
             const panel = document.getElementById('black-panel');
-            
             if (isFaceToFace) {
                 panel.classList.add('rotate-180');
             } else {
                 panel.classList.remove('rotate-180');
             }
-
             state.piecesData.forEach(p => {
                 if (p.color === 'black' && p.active) {
                     const rotation = isFaceToFace ? 'rotate(180deg)' : 'rotate(0deg)';
@@ -363,7 +405,6 @@
         function toggleHints() {
             state.showHints = !state.showHints;
             const btn = document.getElementById('hint-btn');
-            
             if (state.showHints) {
                 btn.classList.replace('bg-[#0d1117]', 'bg-[#2ea043]');
                 btn.classList.replace('text-gray-400', 'text-white');
@@ -417,12 +458,21 @@
 
         function startGame() {
             if(typeof Chess === 'undefined') {
-                alert("আপনার ব্রাউজার বা ইন্টারনেট 'Chess.js' লাইব্রেরি লোড করতে পারেনি! পেজটি একবার রিলোড দিন।");
+                alert("ইন্টারনেট থেকে চেস লজিক লাইব্রেরিটি লোড হতে পারেনি! দয়া করে ইন্টারনেট কানেকশন চেক করে পেজটি রিলোড দিন।");
                 return;
             }
             
             state.players.white = document.getElementById('white-name').value || 'সাদা প্লেয়ার';
-            state.players.black = document.getElementById('black-name').value || 'কালো প্লেয়ার';
+            state.opponentMode = document.getElementById('opponent-mode').value;
+            state.difficulty = document.getElementById('ai-difficulty').value;
+            
+            if (state.opponentMode === 'computer') {
+                let lvl = state.difficulty === 'easy' ? 'ইজি' : (state.difficulty === 'medium' ? 'মিডিয়াম' : 'হাই');
+                state.players.black = `কম্পিউটার (${lvl})`;
+            } else {
+                state.players.black = document.getElementById('black-name').value || 'কালো প্লেয়ার';
+            }
+
             state.mode = document.getElementById('game-mode').value;
             const time = parseInt(document.getElementById('time-limit').value) * 60;
             state.timers = { white: time, black: time };
@@ -492,6 +542,7 @@
 
         function handleSquareClick(r, c) {
             if (state.gameOver) return;
+            if (state.opponentMode === 'computer' && game.turn() === 'b') return; 
 
             const alg = toAlgebraic(r, c);
             const piece = game.get(alg);
@@ -583,7 +634,102 @@
             updateInteractions();
             updateUIPanels();
             checkGameOver();
+
+            // এআই (কম্পিউটার) এর চাল ট্রিগার
+            if (!state.gameOver && state.opponentMode === 'computer' && game.turn() === 'b') {
+                setTimeout(makeComputerMove, 300); // UI আপডেট হওয়ার জন্য সামান্য ডিলি
+            }
         }
+
+        /* ---------------- PRO AI LOGIC (Minimax with Alpha-Beta Pruning) ---------------- */
+        function evaluateBoard(g) {
+            let score = 0;
+            // গুটির ভ্যালু (Pawn=100, Knight=300, Bishop=300, Rook=500, Queen=900)
+            const vals = {'p': 100, 'n': 300, 'b': 300, 'r': 500, 'q': 900, 'k': 10000};
+            const b = g.board();
+            for(let r=0; r<8; r++){
+                for(let c=0; c<8; c++){
+                    if(b[r][c]){
+                        let val = vals[b[r][c].type];
+                        // মাঝখানের ঘরের দিকে গুটি থাকলে সামান্য বোনাস পয়েন্ট পাবে (Center Control)
+                        let centerBonus = (3.5 - Math.abs(3.5 - r)) * (3.5 - Math.abs(3.5 - c)) * 2;
+                        val += centerBonus;
+                        score += (b[r][c].color === 'w' ? val : -val);
+                    }
+                }
+            }
+            return score;
+        }
+
+        function minimax(g, depth, alpha, beta, isMaximizing) {
+            if(depth === 0 || g.game_over()) return evaluateBoard(g);
+            let moves = g.moves();
+            if(isMaximizing) { // White (Positive)
+                let maxEval = -Infinity;
+                for(let i=0; i<moves.length; i++) {
+                    g.move(moves[i]);
+                    let ev = minimax(g, depth-1, alpha, beta, false);
+                    g.undo();
+                    maxEval = Math.max(maxEval, ev);
+                    alpha = Math.max(alpha, ev);
+                    if(beta <= alpha) break;
+                }
+                return maxEval;
+            } else { // Black (Negative)
+                let minEval = Infinity;
+                for(let i=0; i<moves.length; i++) {
+                    g.move(moves[i]);
+                    let ev = minimax(g, depth-1, alpha, beta, true);
+                    g.undo();
+                    minEval = Math.min(minEval, ev);
+                    beta = Math.min(beta, ev);
+                    if(beta <= alpha) break;
+                }
+                return minEval;
+            }
+        }
+
+        function getBestMove(g, depth) {
+            let moves = g.moves({verbose: true});
+            let bestMove = null;
+            let bestValue = Infinity; // Black wants lowest score
+            
+            // একই চাল এড়াতে চালগুলোকে একটু এলোমেলো (Shuffle) করে নেওয়া হলো
+            moves.sort(() => Math.random() - 0.5);
+
+            for(let i=0; i<moves.length; i++) {
+                g.move(moves[i]);
+                let moveVal = minimax(g, depth - 1, -Infinity, Infinity, true); 
+                g.undo();
+                
+                if(moveVal < bestValue) {
+                    bestValue = moveVal;
+                    bestMove = moves[i];
+                }
+            }
+            return bestMove || moves[0];
+        }
+
+        function makeComputerMove() {
+            if (state.gameOver) return;
+            const moves = game.moves({ verbose: true });
+            if (moves.length === 0) return;
+
+            let chosenMove = null;
+
+            if (state.difficulty === 'easy') {
+                chosenMove = getBestMove(game, 1); // Depth 1 (১ চাল ভবিষ্যৎ)
+            } 
+            else if (state.difficulty === 'medium') {
+                chosenMove = getBestMove(game, 2); // Depth 2 (২ চাল ভবিষ্যৎ)
+            } 
+            else {
+                chosenMove = getBestMove(game, 3); // Depth 3 (৩ চাল ভবিষ্যৎ - সবচেয়ে হার্ড)
+            }
+
+            executeMove(chosenMove.from, chosenMove.to);
+        }
+        /* -------------------------------------------------------------------------------- */
 
         function updateCapturedUI() {
             const wCapDiv = document.getElementById('white-captured');
@@ -621,6 +767,7 @@
                     cell.classList.add('selected');
                 }
 
+                // বাল্ব অন থাকলে তবেই গুটির মুভমেন্টের ডট দেখাবে
                 const move = state.validMoves.find(m => m.r === r && m.c === c);
                 if (move && state.showHints) {
                     const marker = document.createElement('div');
@@ -628,7 +775,8 @@
                     cell.appendChild(marker);
                 }
 
-                if (game.in_check()) {
+                // বাল্ব অন থাকলে তবেই রাজাকে চেক দেওয়ার রেড হাইলাইট দেখাবে
+                if (game.in_check() && state.showHints) {
                     const piece = game.get(alg);
                     if (piece && piece.type === 'k' && piece.color === game.turn()) {
                         cell.classList.add('in-check');
