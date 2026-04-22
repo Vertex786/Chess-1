@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>আল্ট্রা-প্রিমিয়াম চেস - প্রো ম্যাক্স (Pro AI)</title>
+    <title>আল্ট্রা-প্রিমিয়াম চেস - প্রো ম্যাক্স (Ultra Smooth)</title>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
@@ -37,7 +37,10 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            touch-action: manipulation;
+            /* টেলিগ্রামে ডাবল ট্যাপ জুম এবং ডিফল্ট স্ক্রল অফ করা হলো */
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .player-panel {
@@ -96,6 +99,7 @@
             overflow: hidden;
             background-color: var(--board-light);
             transition: background-color 0.3s ease;
+            touch-action: none;
         }
 
         .grid-layer, .interaction-layer, .pieces-layer {
@@ -121,6 +125,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            /* মোবাইল স্ক্রিনের টাচ ডিলে রিমুভ */
+            touch-action: manipulation; 
         }
 
         .interact-square.selected {
@@ -165,8 +171,13 @@
             background-size: 95%;
             background-position: center;
             background-repeat: no-repeat;
-            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            /* হার্ডওয়্যার অ্যাকসিলারেশন (GPU) অ্যাড করা হলো, এতে কোনো ল্যাগ থাকবে না */
+            transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1);
             filter: drop-shadow(0 4px 5px rgba(0,0,0,0.4));
+            will-change: transform;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            transform-style: preserve-3d;
         }
 
         .modal {
@@ -211,9 +222,9 @@
                 <div id="difficulty-container" class="col-span-2 hidden">
                     <label class="block text-xs text-gray-400 mb-1">কম্পিউটারের লেভেল</label>
                     <select id="ai-difficulty" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2.5 text-sm text-white outline-none focus:border-[#2ea043]">
-                        <option value="easy">ইজি (Easy - 1 Level Ahead)</option>
-                        <option value="medium">মিডিয়াম (Medium - 2 Levels Ahead)</option>
-                        <option value="high">হাই (High - 3 Levels Ahead)</option>
+                        <option value="easy">ইজি (Easy)</option>
+                        <option value="medium">মিডিয়াম (Medium)</option>
+                        <option value="high">হাই (High)</option>
                     </select>
                 </div>
 
@@ -243,10 +254,10 @@
                 </div>
             </div>
 
-            <label class="block text-sm font-semibold text-white mb-2 border-b border-[#30363d] pb-1">গুটির ডিজাইন (Piece Style)</label>
+            <label class="block text-sm font-semibold text-white mb-2 border-b border-[#30363d] pb-1">গুটির ডিজাইন</label>
             <div class="grid grid-cols-5 gap-2 mb-5" id="piece-set-grid"></div>
 
-            <label class="block text-sm font-semibold text-white mb-2 border-b border-[#30363d] pb-1">বোর্ডের থিম (Board Style)</label>
+            <label class="block text-sm font-semibold text-white mb-2 border-b border-[#30363d] pb-1">বোর্ডের থিম</label>
             <div class="grid grid-cols-5 gap-2 mb-6" id="theme-grid"></div>
 
             <button onclick="startGame()" class="w-full bg-[#238636] hover:bg-[#2ea043] text-white font-bold py-3.5 rounded-lg transition text-lg shadow-lg">গেম শুরু করুন</button>
@@ -273,7 +284,7 @@
                         <div id="black-display-name" class="font-bold text-lg text-white">কালো প্লেয়ার</div>
                         <div class="text-xs text-gray-300">কালো গুটি</div>
                     </div>
-                    <button onclick="togglePlayMode()" class="ml-2 bg-[#0d1117] hover:bg-[#30363d] text-gray-300 p-2 rounded-full border border-[#30363d] shadow transition flex items-center justify-center w-8 h-8" title="একপাশ/দুইপাশ ভিউ পরিবর্তন করুন">
+                    <button onclick="togglePlayMode()" class="ml-2 bg-[#0d1117] hover:bg-[#30363d] text-gray-300 p-2 rounded-full border border-[#30363d] shadow transition flex items-center justify-center w-8 h-8" title="ভিউ পরিবর্তন">
                         <i class="fas fa-sync-alt"></i>
                     </button>
                 </div>
@@ -300,7 +311,7 @@
                         <div id="white-display-name" class="font-bold text-lg text-white">সাদা প্লেয়ার</div>
                         <div class="text-xs text-gray-300">সাদা গুটি</div>
                     </div>
-                    <button onclick="toggleHints()" id="hint-btn" class="ml-2 bg-[#2ea043] text-white p-2 rounded-full border border-[#30363d] shadow transition flex items-center justify-center w-8 h-8" title="হিন্টস (Hints) অন/অফ করুন">
+                    <button onclick="toggleHints()" id="hint-btn" class="ml-2 bg-[#2ea043] text-white p-2 rounded-full border border-[#30363d] shadow transition flex items-center justify-center w-8 h-8" title="হিন্টস অন/অফ">
                         <i class="fas fa-lightbulb"></i>
                     </button>
                 </div>
@@ -311,9 +322,14 @@
     </div>
 
     <script>
+        // টেলিগ্রাম মিনি অ্যাপ অপ্টিমাইজেশন
         if (window.Telegram && window.Telegram.WebApp) {
             window.Telegram.WebApp.ready();
             window.Telegram.WebApp.expand(); 
+            // টেলিগ্রামে ভুলে স্ক্রল হয়ে বন্ধ হওয়া ঠেকাতে
+            if (window.Telegram.WebApp.isVersionAtLeast('6.1')) {
+                window.Telegram.WebApp.disableVerticalSwipes();
+            }
         }
 
         const PIECE_SETS = [
@@ -594,7 +610,7 @@
                     capPieceObj.active = false;
                     capPieceObj.el.style.opacity = '0';
                     capPieceObj.el.style.transform += ' scale(0)';
-                    setTimeout(() => capPieceObj.el.remove(), 300);
+                    setTimeout(() => capPieceObj.el.remove(), 250);
                 }
                 
                 const turnStr = move.color === 'w' ? 'white' : 'black';
@@ -635,23 +651,25 @@
             updateUIPanels();
             checkGameOver();
 
-            // এআই (কম্পিউটার) এর চাল ট্রিগার
+            // এআই এর চাল ট্রিগার (UI আপডেট হওয়ার পর রান করবে যেন হ্যাং না হয়)
             if (!state.gameOver && state.opponentMode === 'computer' && game.turn() === 'b') {
-                setTimeout(makeComputerMove, 300); // UI আপডেট হওয়ার জন্য সামান্য ডিলি
+                setTimeout(() => {
+                    requestAnimationFrame(() => {
+                        makeComputerMove();
+                    });
+                }, 400); 
             }
         }
 
-        /* ---------------- PRO AI LOGIC (Minimax with Alpha-Beta Pruning) ---------------- */
+        /* ---------------- PRO AI LOGIC ---------------- */
         function evaluateBoard(g) {
             let score = 0;
-            // গুটির ভ্যালু (Pawn=100, Knight=300, Bishop=300, Rook=500, Queen=900)
             const vals = {'p': 100, 'n': 300, 'b': 300, 'r': 500, 'q': 900, 'k': 10000};
             const b = g.board();
             for(let r=0; r<8; r++){
                 for(let c=0; c<8; c++){
                     if(b[r][c]){
                         let val = vals[b[r][c].type];
-                        // মাঝখানের ঘরের দিকে গুটি থাকলে সামান্য বোনাস পয়েন্ট পাবে (Center Control)
                         let centerBonus = (3.5 - Math.abs(3.5 - r)) * (3.5 - Math.abs(3.5 - c)) * 2;
                         val += centerBonus;
                         score += (b[r][c].color === 'w' ? val : -val);
@@ -664,7 +682,7 @@
         function minimax(g, depth, alpha, beta, isMaximizing) {
             if(depth === 0 || g.game_over()) return evaluateBoard(g);
             let moves = g.moves();
-            if(isMaximizing) { // White (Positive)
+            if(isMaximizing) { 
                 let maxEval = -Infinity;
                 for(let i=0; i<moves.length; i++) {
                     g.move(moves[i]);
@@ -675,7 +693,7 @@
                     if(beta <= alpha) break;
                 }
                 return maxEval;
-            } else { // Black (Negative)
+            } else { 
                 let minEval = Infinity;
                 for(let i=0; i<moves.length; i++) {
                     g.move(moves[i]);
@@ -692,9 +710,7 @@
         function getBestMove(g, depth) {
             let moves = g.moves({verbose: true});
             let bestMove = null;
-            let bestValue = Infinity; // Black wants lowest score
-            
-            // একই চাল এড়াতে চালগুলোকে একটু এলোমেলো (Shuffle) করে নেওয়া হলো
+            let bestValue = Infinity; 
             moves.sort(() => Math.random() - 0.5);
 
             for(let i=0; i<moves.length; i++) {
@@ -716,17 +732,15 @@
             if (moves.length === 0) return;
 
             let chosenMove = null;
-
             if (state.difficulty === 'easy') {
-                chosenMove = getBestMove(game, 1); // Depth 1 (১ চাল ভবিষ্যৎ)
+                chosenMove = getBestMove(game, 1); 
             } 
             else if (state.difficulty === 'medium') {
-                chosenMove = getBestMove(game, 2); // Depth 2 (২ চাল ভবিষ্যৎ)
+                chosenMove = getBestMove(game, 2); 
             } 
             else {
-                chosenMove = getBestMove(game, 3); // Depth 3 (৩ চাল ভবিষ্যৎ - সবচেয়ে হার্ড)
+                chosenMove = getBestMove(game, 3); 
             }
-
             executeMove(chosenMove.from, chosenMove.to);
         }
         /* -------------------------------------------------------------------------------- */
@@ -767,7 +781,6 @@
                     cell.classList.add('selected');
                 }
 
-                // বাল্ব অন থাকলে তবেই গুটির মুভমেন্টের ডট দেখাবে
                 const move = state.validMoves.find(m => m.r === r && m.c === c);
                 if (move && state.showHints) {
                     const marker = document.createElement('div');
@@ -775,7 +788,6 @@
                     cell.appendChild(marker);
                 }
 
-                // বাল্ব অন থাকলে তবেই রাজাকে চেক দেওয়ার রেড হাইলাইট দেখাবে
                 if (game.in_check() && state.showHints) {
                     const piece = game.get(alg);
                     if (piece && piece.type === 'k' && piece.color === game.turn()) {
