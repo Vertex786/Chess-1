@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>আল্ট্রা-প্রিমিয়াম চেস - প্রো ম্যাক্স (Human Paced AI)</title>
+    <title>আল্ট্রা-প্রিমিয়াম চেস (Lightweight & Fast)</title>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
@@ -27,7 +27,6 @@
         body {
             font-family: 'Noto Sans Bengali', 'Poppins', sans-serif;
             background: var(--bg-color);
-            background-image: radial-gradient(circle at 50% 0%, #1f2937 0%, transparent 70%);
             color: var(--text-color);
             margin: 0;
             padding: 0;
@@ -37,7 +36,7 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            touch-action: none;
+            touch-action: manipulation;
             user-select: none;
             -webkit-user-select: none;
         }
@@ -45,14 +44,13 @@
         .player-panel {
             width: 100%;
             max-width: 600px;
-            padding: 12px 20px;
+            padding: 10px 15px;
             background: var(--panel-bg);
-            backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             box-sizing: border-box;
             position: relative;
         }
@@ -60,7 +58,6 @@
         .active-panel {
             background: rgba(46, 160, 67, 0.25);
             border-color: rgba(46, 160, 67, 0.6);
-            box-shadow: 0 0 25px rgba(46, 160, 67, 0.35);
         }
 
         .rotate-180 { transform: rotate(180deg); }
@@ -75,14 +72,12 @@
         }
 
         .captured-piece {
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
             margin-left: -8px;
-            filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5)) drop-shadow(0 2px 4px rgba(0,0,0,0.8));
-            transition: all 0.3s ease;
         }
         
         .captured-piece:first-child { margin-left: 0; }
@@ -93,12 +88,10 @@
             aspect-ratio: 1 / 1;
             position: relative;
             margin: 15px 0;
-            border-radius: 6px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 8px #21262d;
+            border-radius: 4px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 6px #21262d;
             overflow: hidden;
             background-color: var(--board-light);
-            transition: background-color 0.3s ease;
-            touch-action: none;
         }
 
         .grid-layer, .interaction-layer, .pieces-layer {
@@ -114,8 +107,8 @@
         .pieces-layer { pointer-events: none; z-index: 5; display: block; }
 
         .square { width: 100%; height: 100%; }
-        .square.dark { background-color: var(--board-dark); transition: background-color 0.3s ease; }
-        .square.light { background-color: var(--board-light); transition: background-color 0.3s ease; }
+        .square.dark { background-color: var(--board-dark); }
+        .square.light { background-color: var(--board-light); }
 
         .interact-square {
             width: 100%; height: 100%;
@@ -124,43 +117,26 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            touch-action: manipulation; 
         }
 
         .interact-square.selected {
             background-color: var(--highlight);
-            box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.4);
         }
         
         .in-check {
-            background-color: rgba(255, 0, 0, 0.5) !important;
-            box-shadow: inset 0 0 25px rgba(255, 0, 0, 0.8);
+            background-color: rgba(255, 0, 0, 0.6) !important;
         }
 
         .valid-dot {
             width: 25%; height: 25%;
             background-color: rgba(0, 0, 0, 0.4);
             border-radius: 50%;
-            animation: pulseDot 1.5s infinite;
         }
 
         .valid-capture {
             width: 85%; height: 85%;
-            border: 6px solid rgba(0, 0, 0, 0.4);
+            border: 5px solid rgba(0, 0, 0, 0.4);
             border-radius: 50%;
-            animation: pulseRing 1.5s infinite;
-        }
-
-        @keyframes pulseDot {
-            0% { transform: scale(1); opacity: 0.7; }
-            50% { transform: scale(1.2); opacity: 1; }
-            100% { transform: scale(1); opacity: 0.7; }
-        }
-
-        @keyframes pulseRing {
-            0% { transform: scale(0.95); opacity: 0.7; }
-            50% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(0.95); opacity: 0.7; }
         }
 
         .piece {
@@ -169,19 +145,15 @@
             background-size: 95%;
             background-position: center;
             background-repeat: no-repeat;
-            transition: transform 0.3s ease-in-out;
-            filter: drop-shadow(0 3px 4px rgba(0,0,0,0.3)); 
+            /* হালকা ট্রান্সফর্ম, কোনো ভারী শ্যাডো নেই */
+            transition: transform 0.2s ease;
             will-change: transform;
-            -webkit-transform-style: preserve-3d;
-            transform-style: preserve-3d;
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
         }
 
         .modal {
             position: fixed; inset: 0;
             background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(5px);
             z-index: 100;
             display: flex; justify-content: center; align-items: center;
         }
@@ -194,7 +166,6 @@
         .theme-btn.active, .piece-set-btn.active { 
             border-color: #2ea043; 
             transform: scale(1.05); 
-            box-shadow: 0 0 10px rgba(46, 160, 67, 0.5);
         }
 
         .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -205,13 +176,13 @@
 <body>
 
     <div id="setup-modal" class="modal">
-        <div class="bg-[#161b22] border border-[#30363d] p-6 rounded-2xl w-[90%] max-w-lg max-h-[95vh] overflow-y-auto scrollbar-hide">
-            <h2 class="text-2xl font-bold mb-5 text-center text-white"><i class="fas fa-chess-king text-[#2ea043] mr-2"></i>গেম সেটিংস</h2>
+        <div class="bg-[#161b22] border border-[#30363d] p-6 rounded-xl w-[90%] max-w-lg max-h-[95vh] overflow-y-auto scrollbar-hide">
+            <h2 class="text-xl font-bold mb-4 text-center text-white"><i class="fas fa-chess-king text-[#2ea043] mr-2"></i>গেম সেটিংস</h2>
             
-            <div class="space-y-4 mb-5">
+            <div class="space-y-3 mb-4">
                 <div class="col-span-2">
                     <label class="block text-xs text-gray-400 mb-1">কার সাথে খেলবেন?</label>
-                    <select id="opponent-mode" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2.5 text-sm text-white outline-none focus:border-[#2ea043]" onchange="toggleOpponentMode()">
+                    <select id="opponent-mode" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2 text-sm text-white outline-none" onchange="toggleOpponentMode()">
                         <option value="friend">বন্ধুর সাথে (Local)</option>
                         <option value="computer">কম্পিউটারের সাথে (AI)</option>
                     </select>
@@ -219,7 +190,7 @@
 
                 <div id="difficulty-container" class="col-span-2 hidden">
                     <label class="block text-xs text-gray-400 mb-1">কম্পিউটারের লেভেল</label>
-                    <select id="ai-difficulty" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2.5 text-sm text-white outline-none focus:border-[#2ea043]">
+                    <select id="ai-difficulty" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2 text-sm text-white outline-none">
                         <option value="easy">ইজি (Easy)</option>
                         <option value="medium">মিডিয়াম (Medium)</option>
                         <option value="high">হাই (High)</option>
@@ -228,67 +199,67 @@
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs text-gray-400 mb-1">সাদা প্লেয়ার (আপনি)</label>
-                        <input type="text" id="white-name" placeholder="প্লেয়ার ১" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2.5 text-sm text-white outline-none focus:border-[#2ea043]">
+                        <label class="block text-xs text-gray-400 mb-1">সাদা প্লেয়ার</label>
+                        <input type="text" id="white-name" placeholder="প্লেয়ার ১" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2 text-sm text-white outline-none">
                     </div>
                     <div>
                         <label class="block text-xs text-gray-400 mb-1">কালো প্লেয়ার</label>
-                        <input type="text" id="black-name" placeholder="প্লেয়ার ২" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2.5 text-sm text-white outline-none focus:border-[#2ea043]">
+                        <input type="text" id="black-name" placeholder="প্লেয়ার ২" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2 text-sm text-white outline-none">
                     </div>
                 </div>
                 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs text-gray-400 mb-1">গেম মোড</label>
-                        <select id="game-mode" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2.5 text-sm text-white outline-none" onchange="document.getElementById('time-container').classList.toggle('hidden', this.value === 'classic')">
+                        <select id="game-mode" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2 text-sm text-white outline-none" onchange="document.getElementById('time-container').classList.toggle('hidden', this.value === 'classic')">
                             <option value="classic">ক্লাসিক</option>
                             <option value="quick">কুইক (টাইমার)</option>
                         </select>
                     </div>
                     <div id="time-container" class="hidden">
                         <label class="block text-xs text-gray-400 mb-1">সময় (মিনিট)</label>
-                        <input type="number" id="time-limit" value="10" min="1" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2.5 text-sm text-white outline-none">
+                        <input type="number" id="time-limit" value="10" min="1" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2 text-sm text-white outline-none">
                     </div>
                 </div>
             </div>
 
             <label class="block text-sm font-semibold text-white mb-2 border-b border-[#30363d] pb-1">গুটির ডিজাইন</label>
-            <div class="grid grid-cols-5 gap-2 mb-5" id="piece-set-grid"></div>
+            <div class="grid grid-cols-5 gap-2 mb-4" id="piece-set-grid"></div>
 
             <label class="block text-sm font-semibold text-white mb-2 border-b border-[#30363d] pb-1">বোর্ডের থিম</label>
-            <div class="grid grid-cols-5 gap-2 mb-6" id="theme-grid"></div>
+            <div class="grid grid-cols-5 gap-2 mb-5" id="theme-grid"></div>
 
-            <button onclick="startGame()" class="w-full bg-[#238636] hover:bg-[#2ea043] text-white font-bold py-3.5 rounded-lg transition text-lg shadow-lg">গেম শুরু করুন</button>
+            <button onclick="startGame()" class="w-full bg-[#238636] hover:bg-[#2ea043] text-white font-bold py-3 rounded transition text-lg shadow-lg">গেম শুরু করুন</button>
         </div>
     </div>
 
     <div id="game-over-modal" class="modal" style="display: none;">
-        <div class="bg-[#161b22] border border-[#30363d] p-8 rounded-2xl w-[90%] max-w-sm text-center">
+        <div class="bg-[#161b22] border border-[#30363d] p-8 rounded-xl w-[90%] max-w-sm text-center">
             <i class="fas fa-trophy text-5xl text-yellow-500 mb-4"></i>
             <h2 id="winner-msg" class="text-3xl font-bold text-white mb-2"></h2>
             <p id="reason-msg" class="text-gray-400 mb-6"></p>
-            <button onclick="location.reload()" class="bg-[#2ea043] text-white px-8 py-3 rounded-lg font-bold hover:bg-[#238636] transition">নতুন গেম</button>
+            <button onclick="location.reload()" class="bg-[#2ea043] text-white px-8 py-2 rounded font-bold hover:bg-[#238636] transition">নতুন গেম</button>
         </div>
     </div>
 
-    <div id="black-panel" class="player-panel rotate-180 rounded-t-xl">
+    <div id="black-panel" class="player-panel rotate-180 rounded-t-lg">
         <div class="flex flex-col w-full">
             <div class="flex justify-between items-center w-full">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded bg-[#1f2937] flex items-center justify-center border border-gray-500 shadow-inner">
-                        <i class="fas fa-chess-king text-gray-300"></i>
+                    <div class="w-8 h-8 rounded bg-[#1f2937] flex items-center justify-center border border-gray-500">
+                        <i class="fas fa-chess-king text-gray-300 text-sm"></i>
                     </div>
                     <div>
-                        <div id="black-display-name" class="font-bold text-lg text-white">কালো প্লেয়ার</div>
-                        <div class="text-xs text-gray-300">কালো গুটি</div>
+                        <div id="black-display-name" class="font-bold text-base text-white">কালো প্লেয়ার</div>
+                        <div class="text-[10px] text-gray-300">কালো গুটি</div>
                     </div>
-                    <button onclick="togglePlayMode()" class="ml-2 bg-[#0d1117] hover:bg-[#30363d] text-gray-300 p-2 rounded-full border border-[#30363d] shadow transition flex items-center justify-center w-8 h-8" title="ভিউ পরিবর্তন">
-                        <i class="fas fa-sync-alt"></i>
+                    <button onclick="togglePlayMode()" class="ml-2 bg-[#0d1117] text-gray-300 p-1.5 rounded-full border border-[#30363d] w-7 h-7 flex items-center justify-center">
+                        <i class="fas fa-sync-alt text-xs"></i>
                     </button>
                 </div>
-                <div id="black-timer" class="text-2xl font-mono font-bold text-gray-200 hidden tracking-wider">10:00</div>
+                <div id="black-timer" class="text-xl font-mono font-bold text-gray-200 hidden">10:00</div>
             </div>
-            <div id="black-captured" class="captured-pieces mt-2"></div>
+            <div id="black-captured" class="captured-pieces mt-1"></div>
         </div>
     </div>
 
@@ -298,24 +269,24 @@
         <div class="interaction-layer" id="interact-grid"></div>
     </div>
 
-    <div id="white-panel" class="player-panel rounded-b-xl active-panel">
+    <div id="white-panel" class="player-panel rounded-b-lg active-panel">
         <div class="flex flex-col w-full">
             <div class="flex justify-between items-center w-full">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded bg-white flex items-center justify-center border border-gray-300 shadow-inner">
-                        <i class="fas fa-chess-king text-black"></i>
+                    <div class="w-8 h-8 rounded bg-white flex items-center justify-center border border-gray-300">
+                        <i class="fas fa-chess-king text-black text-sm"></i>
                     </div>
                     <div>
-                        <div id="white-display-name" class="font-bold text-lg text-white">সাদা প্লেয়ার</div>
-                        <div class="text-xs text-gray-300">সাদা গুটি</div>
+                        <div id="white-display-name" class="font-bold text-base text-white">সাদা প্লেয়ার</div>
+                        <div class="text-[10px] text-gray-300">সাদা গুটি</div>
                     </div>
-                    <button onclick="toggleHints()" id="hint-btn" class="ml-2 bg-[#2ea043] text-white p-2 rounded-full border border-[#30363d] shadow transition flex items-center justify-center w-8 h-8" title="হিন্টস অন/অফ">
-                        <i class="fas fa-lightbulb"></i>
+                    <button onclick="toggleHints()" id="hint-btn" class="ml-2 bg-[#2ea043] text-white p-1.5 rounded-full border border-[#30363d] w-7 h-7 flex items-center justify-center">
+                        <i class="fas fa-lightbulb text-xs"></i>
                     </button>
                 </div>
-                <div id="white-timer" class="text-2xl font-mono font-bold text-gray-200 hidden tracking-wider">10:00</div>
+                <div id="white-timer" class="text-xl font-mono font-bold text-gray-200 hidden">10:00</div>
             </div>
-            <div id="white-captured" class="captured-pieces mt-2"></div>
+            <div id="white-captured" class="captured-pieces mt-1"></div>
         </div>
     </div>
 
@@ -408,7 +379,7 @@
             state.piecesData.forEach(p => {
                 if (p.color === 'black' && p.active) {
                     const rotation = isFaceToFace ? 'rotate(180deg)' : 'rotate(0deg)';
-                    p.el.style.transform = `translate3d(${p.c * 100}%, ${p.r * 100}%, 0) ${rotation}`;
+                    p.el.style.transform = `translate(${p.c * 100}%, ${p.r * 100}%) ${rotation}`;
                 }
             });
             updateCapturedUI();
@@ -432,10 +403,10 @@
             pieceGrid.innerHTML = ''; 
             PIECE_SETS.forEach((p, i) => {
                 const btn = document.createElement('div');
-                btn.className = `piece-set-btn bg-[#0d1117] rounded p-2 flex flex-col items-center justify-center ${i === 0 ? 'active' : ''}`;
+                btn.className = `piece-set-btn bg-[#0d1117] rounded p-1 flex flex-col items-center justify-center ${i === 0 ? 'active' : ''}`;
                 btn.innerHTML = `
-                    <div class="w-8 h-8 bg-contain bg-center bg-no-repeat mb-1" style="background-image: url('${getPieceUrl('N', p.id)}')"></div>
-                    <div class="text-[9px] text-gray-400 text-center">${p.name}</div>
+                    <div class="w-6 h-6 bg-contain bg-center bg-no-repeat mb-1" style="background-image: url('${getPieceUrl('N', p.id)}')"></div>
+                    <div class="text-[8px] text-gray-400 text-center">${p.name}</div>
                 `;
                 btn.onclick = () => {
                     document.querySelectorAll('.piece-set-btn').forEach(b => b.classList.remove('active'));
@@ -449,13 +420,13 @@
             themeGrid.innerHTML = ''; 
             BOARD_THEMES.forEach((t, i) => {
                 const btn = document.createElement('div');
-                btn.className = `theme-btn rounded overflow-hidden h-10 flex flex-col ${i === 0 ? 'active' : ''}`;
+                btn.className = `theme-btn rounded overflow-hidden h-8 flex flex-col ${i === 0 ? 'active' : ''}`;
                 btn.innerHTML = `
                     <div class="flex-1 flex">
                         <div style="flex:1; background:${t.light}"></div>
                         <div style="flex:1; background:${t.dark}"></div>
                     </div>
-                    <div class="text-[9px] text-center bg-[#0d1117] py-0.5 text-gray-300">${t.name}</div>
+                    <div class="text-[8px] text-center bg-[#0d1117] text-gray-300">${t.name}</div>
                 `;
                 btn.onclick = () => {
                     document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
@@ -470,7 +441,7 @@
 
         function startGame() {
             if(typeof Chess === 'undefined') {
-                alert("ইন্টারনেট থেকে চেস লজিক লাইব্রেরিটি লোড হতে পারেনি! দয়া করে ইন্টারনেট কানেকশন চেক করে পেজটি রিলোড দিন।");
+                alert("লাইব্রেরি লোড হয়নি! ইন্টারনেট চেক করে রিলোড দিন।");
                 return;
             }
             
@@ -543,7 +514,7 @@
                         pieceDiv.style.backgroundImage = `url('${getPieceUrl(char)}')`;
                         
                         const rotation = (color === 'black' && isFaceToFace) ? 'rotate(180deg)' : 'rotate(0deg)';
-                        pieceDiv.style.transform = `translate3d(${c * 100}%, ${r * 100}%, 0) ${rotation}`;
+                        pieceDiv.style.transform = `translate(${c * 100}%, ${r * 100}%) ${rotation}`;
                         
                         piecesLayer.appendChild(pieceDiv);
                         state.piecesData.push({ id, r, c, color, type: char, el: pieceDiv, active: true });
@@ -606,7 +577,7 @@
                     capPieceObj.active = false;
                     capPieceObj.el.style.opacity = '0';
                     capPieceObj.el.style.transform += ' scale(0)';
-                    setTimeout(() => capPieceObj.el.remove(), 250);
+                    setTimeout(() => capPieceObj.el.remove(), 200);
                 }
                 
                 const turnStr = move.color === 'w' ? 'white' : 'black';
@@ -620,7 +591,7 @@
                 pieceObj.r = toPos.r;
                 pieceObj.c = toPos.c;
                 const rotation = (pieceObj.color === 'black' && isFaceToFace) ? 'rotate(180deg)' : 'rotate(0deg)';
-                pieceObj.el.style.transform = `translate3d(${toPos.c * 100}%, ${toPos.r * 100}%, 0) ${rotation}`;
+                pieceObj.el.style.transform = `translate(${toPos.c * 100}%, ${toPos.r * 100}%) ${rotation}`;
 
                 if (move.promotion) {
                     pieceObj.type = move.color === 'w' ? 'Q' : 'q';
@@ -637,7 +608,7 @@
                 if (rookObj) {
                     rookObj.c = rookToC;
                     const rRotation = (move.color === 'b' && isFaceToFace) ? 'rotate(180deg)' : 'rotate(0deg)';
-                    rookObj.el.style.transform = `translate3d(${rookToC * 100}%, ${rookR * 100}%, 0) ${rRotation}`;
+                    rookObj.el.style.transform = `translate(${rookToC * 100}%, ${rookR * 100}%) ${rRotation}`;
                 }
             }
 
@@ -647,27 +618,23 @@
             updateUIPanels();
             checkGameOver();
 
-            // এআই এর চাল ট্রিগার (১ সেকেন্ড ডিলে দেওয়া হয়েছে)
+            // এআই এর চাল ট্রিগার (মাত্র ৫০ মিলিসেকেন্ড ডিলে, যাতে খুব দ্রুত হয়)
             if (!state.gameOver && state.opponentMode === 'computer' && game.turn() === 'b') {
                 setTimeout(() => {
-                    requestAnimationFrame(() => {
-                        makeComputerMove();
-                    });
-                }, 1000); // 1000ms = ১ সেকেন্ড
+                    makeComputerMove();
+                }, 200); 
             }
         }
 
-        /* ---------------- PRO AI LOGIC ---------------- */
+        /* ---------------- LIGHTWEIGHT AI LOGIC ---------------- */
         function evaluateBoard(g) {
             let score = 0;
-            const vals = {'p': 100, 'n': 300, 'b': 300, 'r': 500, 'q': 900, 'k': 10000};
+            const vals = {'p': 10, 'n': 30, 'b': 30, 'r': 50, 'q': 90, 'k': 900};
             const b = g.board();
             for(let r=0; r<8; r++){
                 for(let c=0; c<8; c++){
                     if(b[r][c]){
                         let val = vals[b[r][c].type];
-                        let centerBonus = (3.5 - Math.abs(3.5 - r)) * (3.5 - Math.abs(3.5 - c)) * 2;
-                        val += centerBonus;
                         score += (b[r][c].color === 'w' ? val : -val);
                     }
                 }
@@ -675,43 +642,37 @@
             return score;
         }
 
-        function minimax(g, depth, alpha, beta, isMaximizing) {
-            if(depth === 0 || g.game_over()) return evaluateBoard(g);
-            let moves = g.moves();
-            if(isMaximizing) { 
-                let maxEval = -Infinity;
-                for(let i=0; i<moves.length; i++) {
-                    g.move(moves[i]);
-                    let ev = minimax(g, depth-1, alpha, beta, false);
-                    g.undo();
-                    maxEval = Math.max(maxEval, ev);
-                    alpha = Math.max(alpha, ev);
-                    if(beta <= alpha) break;
-                }
-                return maxEval;
-            } else { 
-                let minEval = Infinity;
-                for(let i=0; i<moves.length; i++) {
-                    g.move(moves[i]);
-                    let ev = minimax(g, depth-1, alpha, beta, true);
-                    g.undo();
-                    minEval = Math.min(minEval, ev);
-                    beta = Math.min(beta, ev);
-                    if(beta <= alpha) break;
-                }
-                return minEval;
-            }
-        }
-
         function getBestMove(g, depth) {
             let moves = g.moves({verbose: true});
-            let bestMove = null;
+            if(moves.length === 0) return null;
+            
+            let bestMove = moves[0];
             let bestValue = Infinity; 
+            
+            // একই চাল এড়াতে র্যান্ডমাইজ করা হলো
             moves.sort(() => Math.random() - 0.5);
 
             for(let i=0; i<moves.length; i++) {
                 g.move(moves[i]);
-                let moveVal = minimax(g, depth - 1, -Infinity, Infinity, true); 
+                
+                let moveVal = 0;
+                if(depth === 1) {
+                    moveVal = evaluateBoard(g);
+                } else {
+                    // Depth 2 এর জন্য হালকা ক্যালকুলেশন
+                    let wMoves = g.moves();
+                    let maxW = -Infinity;
+                    if(wMoves.length === 0) maxW = g.in_checkmate() ? -9999 : 0;
+                    else {
+                        for(let j=0; j<wMoves.length; j++){
+                            g.move(wMoves[j]);
+                            maxW = Math.max(maxW, evaluateBoard(g));
+                            g.undo();
+                        }
+                    }
+                    moveVal = maxW;
+                }
+                
                 g.undo();
                 
                 if(moveVal < bestValue) {
@@ -719,7 +680,7 @@
                     bestMove = moves[i];
                 }
             }
-            return bestMove || moves[0];
+            return bestMove;
         }
 
         function makeComputerMove() {
@@ -729,13 +690,16 @@
 
             let chosenMove = null;
             if (state.difficulty === 'easy') {
-                chosenMove = getBestMove(game, 1); 
+                // একদম র্যান্ডম চাল (খুবই দ্রুত)
+                chosenMove = moves[Math.floor(Math.random() * moves.length)];
             } 
             else if (state.difficulty === 'medium') {
-                chosenMove = getBestMove(game, 2); 
+                // লেভেল ১ (দ্রুত ভাববে)
+                chosenMove = getBestMove(game, 1); 
             } 
             else {
-                chosenMove = getBestMove(game, 3); 
+                // লেভেল ২ (একটু বুদ্ধি খাটাবে, তবে ল্যাগ করবে না)
+                chosenMove = getBestMove(game, 2); 
             }
             executeMove(chosenMove.from, chosenMove.to);
         }
