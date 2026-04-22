@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>আল্ট্রা-প্রিমিয়াম চেস - প্রো ম্যাক্স</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&family=Poppins:wght@400;600;800&display=swap');
+
+        :root {
+            --board-light: #f0d9b5;
+            --board-dark: #b58863;
+            --highlight: rgba(255, 255, 51, 0.5);
+            --bg-color: #0d1117;
+            --panel-bg: rgba(55, 65, 81, 0.95); 
+            --piece-set: 'cburnett';
+        }
+
+        body {
+            font-family: 'Noto Sans Bengali', 'Poppins', sans-serif;
+            background: var(--bg-color);
+            background-image: radial-gradient(circle at 50% 0%, #1f2937 0%, transparent 70%);
+            color: #c9d1d9;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        .player-panel {
+            width: 100%;
+            max-width: 600px;
+            padding: 12px 20px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .active-panel {
+            background: rgba(46, 160, 67, 0.25);
+            border-color: rgba(46, 160, 67, 0.6);
+            box-shadow: 0 0 25px rgba(46, 160, 67, 0.35);
+        }
+
+        .rotate-180 { transform: rotate(180deg); }
+
+        .captured-pieces {
+            display: flex;
+            flex-wrap: wrap;
+            gap: -5px;
+            max-width: 150px;
+            align-items: center;
+        }
+
+        .captured-piece {
+            width: 24px;
+            height: 24px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            margin-left: -8px;
+            filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5)) drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+            transition: all 0.3s ease;
+        }
+        
+        .captured-piece:first-child { margin-left: 0; }
+
+        .board-wrapper {
+            width: 95vw;
+            max-width: 500px;
+            aspect-ratio: 1 / 1;
+            position: relative;
+            margin: 15px 0;
+            border-radius: 6px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 8px #21262d;
+            overflow: hidden;
+            background-color: var(--board-light);
+        }
+
+        .grid-layer {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            pointer-events: none;
+        }
+
+        .square { width: 100%; height: 100%; }
+        .square.dark { background-color: var(--board-dark); }
+        .square.light { background-color: var(--board-light); }
+
+        .interaction-layer {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            z-index: 10;
+        }
+
+        .interact-square {
+            width: 100%; height: 100%;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .interact-square.selected {
+            background-color: var(--highlight);
+            box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.4);
+        }
+        
+        .in-check {
+            background-color: rgba(255, 0, 0, 0.5) !important;
+            box-shadow: inset 0 0 25px rgba(255, 0, 0, 0.8);
+        }
+
+        .valid-dot {
+            width: 25%; height: 25%;
+            background-color: rgba(0, 0, 0, 0.4);
+            border-radius: 50%;
+            animation: pulseDot 1.5s infinite;
+        }
+
+        .valid-capture {
+            width: 85%; height: 85%;
+            border: 6px solid rgba(0, 0, 0, 0.4);
+            border-radius: 50%;
+            animation: pulseRing 1.5s infinite;
+        }
+
+        @keyframes pulseDot {
+            0% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.7; }
+        }
+
+        @keyframes pulseRing {
+            0% { transform: scale(0.95); opacity: 0.7; }
+            50% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.7; }
+        }
+
+        .pieces-layer {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .piece {
+            position: absolute;
+            width: 12.5%; height: 12.5%;
+            background-size: 95%;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            filter: drop-shadow(0 4px 5px rgba(0,0,0,0.4));
+        }
+
+        .modal {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            display: flex; justify-content: center; align-items: center;
+        }
+        
+        .theme-btn, .piece-set-btn {
+            border: 2px solid transparent;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        .theme-btn.active, .piece-set-btn.active { 
+            border-color: #2ea043; 
+            transform: scale(1.05); 
+            box-shadow: 0 0 10px rgba(46, 160, 67, 0.5);
+        }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+    </style>
+</head>
+<body>
+
+    <div id="setup-modal" class="modal">
+        <div class="bg-[#161b22] border border-[#30363d] p-6 rounded-2xl w-[90%] max-w-lg max-h-[95vh] overflow-y-auto scrollbar-hide">
+            <h2 class="text-2xl font-bold mb-5 text-center text-white"><i class="fas fa-chess-king text-[#2ea043] mr-2"></i>গেম সেটিংস</h2>
+            
+            <div class="space-y-4 mb-5">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">সাদা প্লেয়ার</label>
+                        <input type="text" id="white-name" placeholder="প্লেয়ার ১" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2.5 text-sm text-white outline-none focus:border-[#2ea043]">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">কালো প্লেয়ার</label>
+                        <input type="text" id="black-name" placeholder="প্লেয়ার ২" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2.5 text-sm text-white outline-none focus:border-[#2ea043]">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">গেম মোড</label>
+                        <select id="game-mode" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2.5 text-sm text-white outline-none" onchange="toggleTimer()">
+                            <option value="classic">ক্লাসিক</option>
+                            <option value="quick">কুইক (টাইমার)</option>
+                        </select>
+                    </div>
+                    <div id="time-container" class="hidden">
+                        <label class="block text-xs text-gray-400 mb-1">সময় (মিনিট)</label>
+                        <input type="number" id="time-limit" value="10" min="1" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2.5 text-sm text-white outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <label class="block text-sm font-semibold text-white mb-2 border-b border-[#30363d] pb-1">গুটির ডিজাইন (Piece Style)</label>
+            <div class="grid grid-cols-5 gap-2 mb-5" id="piece-set-grid"></div>
+
+            <label class="block text-sm font-semibold text-white mb-2 border-b border-[#30363d] pb-1">বোর্ডের থিম (Board Style)</label>
+            <div class="grid grid-cols-5 gap-2 mb-6" id="theme-grid"></div>
+
+            <button onclick="startGame()" class="w-full bg-[#238636] hover:bg-[#2ea043] text-white font-bold py-3.5 rounded-lg transition text-lg shadow-lg">গেম শুরু করুন</button>
+        </div>
+    </div>
+
+    <div id="game-over-modal" class="modal" style="display: none;">
+        <div class="bg-[#161b22] border border-[#30363d] p-8 rounded-2xl w-[90%] max-w-sm text-center">
+            <i class="fas fa-trophy text-5xl text-yellow-500 mb-4"></i>
+            <h2 id="winner-msg" class="text-3xl font-bold text-white mb-2"></h2>
+            <p id="reason-msg" class="text-gray-400 mb-6"></p>
+            <button onclick="location.reload()" class="bg-[#2ea043] text-white px-8 py-3 rounded-lg font-bold hover:bg-[#238636] transition">নতুন গেম</button>
+        </div>
+    </div>
+
+    <div id="black-panel" class="player-panel rotate-180 rounded-t-xl">
+        <div class="flex flex-col w-full">
+            <div class="flex justify-between items-center w-full">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded bg-[#1f2937] flex items-center justify-center border border-gray-500 shadow-inner">
+                        <i class="fas fa-chess-king text-gray-300"></i>
+                    </div>
+                    <div>
+                        <div id="black-display-name" class="font-bold text-lg text-white">কালো প্লেয়ার</div>
+                        <div class="text-xs text-gray-300">কালো গুটি</div>
+                    </div>
+                    <button onclick="togglePlayMode()" class="ml-2 bg-[#0d1117] hover:bg-[#30363d] text-gray-300 p-2 rounded-full border border-[#30363d] shadow transition flex items-center justify-center w-8 h-8" title="একপাশ/দুইপাশ ভিউ পরিবর্তন করুন">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <div id="black-timer" class="text-2xl font-mono font-bold text-gray-200 hidden tracking-wider">10:00</div>
+            </div>
+            <div id="black-captured" class="captured-pieces mt-2 h-6"></div>
+        </div>
+    </div>
+
+    <div class="board-wrapper">
+        <div class="grid-layer" id="bg-grid"></div>
+        <div class="pieces-layer" id="pieces-layer"></div>
+        <div class="interaction-layer" id="interact-grid"></div>
+    </div>
+
+    <div id="white-panel" class="player-panel rounded-b-xl active-panel">
+        <div class="flex flex-col w-full">
+            <div class="flex justify-between items-center w-full">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded bg-white flex items-center justify-center border border-gray-300 shadow-inner">
+                        <i class="fas fa-chess-king text-black"></i>
+                    </div>
+                    <div>
+                        <div id="white-display-name" class="font-bold text-lg text-white">সাদা প্লেয়ার</div>
+                        <div class="text-xs text-gray-300">সাদা গুটি</div>
+                    </div>
+                    <button onclick="toggleHints()" id="hint-btn" class="ml-2 bg-[#2ea043] text-white p-2 rounded-full border border-[#30363d] shadow transition flex items-center justify-center w-8 h-8" title="হিন্টস (Hints) অন/অফ করুন">
+                        <i class="fas fa-lightbulb"></i>
+                    </button>
+                </div>
+                <div id="white-timer" class="text-2xl font-mono font-bold text-gray-200 hidden tracking-wider">10:00</div>
+            </div>
+            <div id="white-captured" class="captured-pieces mt-2 h-6"></div>
+        </div>
+    </div>
+
+    <script>
+        // ডিবাগিং এর জন্য অটো অ্যালার্ট সিস্টেম
+        window.onerror = function(message, source, lineno) {
+            alert("কোডে এরর পাওয়া গেছে!\n" + message + "\nলাইন নম্বর: " + lineno);
+        };
+
+        const PIECE_SETS = [
+            { id: 'cburnett', name: 'Classic' },
+            { id: 'alpha', name: 'Alpha' },
+            { id: 'merida', name: 'Merida' },
+            { id: 'staunty', name: 'Staunty' },
+            { id: 'kosal', name: 'Kosal' }
+        ];
+
+        const BOARD_THEMES = [
+            { id: 'wood', name: 'Wood', light: '#f0d9b5', dark: '#b58863' },
+            { id: 'green', name: 'Green', light: '#ffffdd', dark: '#86a666' },
+            { id: 'blue', name: 'Ocean', light: '#dee3e6', dark: '#8ca2ad' },
+            { id: 'classic', name: 'Classic', light: '#e3c16f', dark: '#b88b4a' },
+            { id: 'dark', name: 'Dark', light: '#a3a3a3', dark: '#404040' },
+            { id: 'neon', name: 'Neon', light: '#2d3748', dark: '#1a202c' },
+            { id: 'coral', name: 'Coral', light: '#f9dfdf', dark: '#d86d6d' },
+            { id: 'sand', name: 'Sand', light: '#e6d3a1', dark: '#a98c56' },
+            { id: 'walnut', name: 'Walnut', light: '#d1bfae', dark: '#6e4f3a' },
+            { id: 'marble', name: 'Marble', light: '#ffffff', dark: '#b3b3b3' }
+        ];
+
+        let selectedTheme = BOARD_THEMES[0];
+        let selectedPieceSet = PIECE_SETS[0].id;
+        
+        let game = null; 
+        let isFaceToFace = true; 
+
+        let state = {
+            piecesData: [],
+            selected: null,
+            validMoves: [],
+            players: { white: 'সাদা', black: 'কালো' },
+            mode: 'classic',
+            timers: { white: 600, black: 600 },
+            interval: null,
+            gameOver: false,
+            pieceIdCounter: 0,
+            captured: { white: [], black: [] },
+            showHints: true 
+        };
+
+        const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+        function toAlgebraic(r, c) { return files[c] + (8 - r); }
+        function fromAlgebraic(sq) { return { c: files.indexOf(sq[0]), r: 8 - parseInt(sq[1]) }; }
+
+        function getPieceUrl(char, set = selectedPieceSet) {
+            const color = char === char.toUpperCase() ? 'w' : 'b';
+            const type = char.toUpperCase();
+            return `https://raw.githubusercontent.com/lichess-org/lila/master/public/piece/${set}/${color}${type}.svg`;
+        }
+
+        function toggleTimer() {
+            document.getElementById('time-container').classList.toggle('hidden', document.getElementById('game-mode').value === 'classic');
+        }
+
+        function togglePlayMode() {
+            isFaceToFace = !isFaceToFace;
+            const panel = document.getElementById('black-panel');
+            
+            if (isFaceToFace) {
+                panel.classList.add('rotate-180');
+            } else {
+                panel.classList.remove('rotate-180');
+            }
+
+            state.piecesData.forEach(p => {
+                if (p.color === 'black' && p.active) {
+                    const rotation = isFaceToFace ? 'rotate(180deg)' : 'rotate(0deg)';
+                    p.el.style.transform = `translate(${p.c * 100}%, ${p.r * 100}%) ${rotation}`;
+                }
+            });
+            updateCapturedUI();
+        }
+
+        function toggleHints() {
+            state.showHints = !state.showHints;
+            const btn = document.getElementById('hint-btn');
+            
+            if (state.showHints) {
+                btn.classList.replace('bg-[#0d1117]', 'bg-[#2ea043]');
+                btn.classList.replace('text-gray-400', 'text-white');
+            } else {
+                btn.classList.replace('bg-[#2ea043]', 'bg-[#0d1117]');
+                btn.classList.replace('text-white', 'text-gray-400');
+            }
+            updateInteractions(); 
+        }
+
+        function initSettingsUI() {
+            const pieceGrid = document.getElementById('piece-set-grid');
+            pieceGrid.innerHTML = ''; // ক্লিয়ার পুরনো ডেটা
+            PIECE_SETS.forEach((p, i) => {
+                const btn = document.createElement('div');
+                btn.className = `piece-set-btn bg-[#0d1117] rounded p-2 flex flex-col items-center justify-center ${i === 0 ? 'active' : ''}`;
+                btn.innerHTML = `
+                    <div class="w-8 h-8 bg-contain bg-center bg-no-repeat mb-1" style="background-image: url('${getPieceUrl('N', p.id)}')"></div>
+                    <div class="text-[9px] text-gray-400 text-center">${p.name}</div>
+                `;
+                btn.onclick = () => {
+                    document.querySelectorAll('.piece-set-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    selectedPieceSet = p.id;
+                };
+                pieceGrid.appendChild(btn);
+            });
+
+            const themeGrid = document.getElementById('theme-grid');
+            themeGrid.innerHTML = ''; // ক্লিয়ার পুরনো ডেটা
+            BOARD_THEMES.forEach((t, i) => {
+                const btn = document.createElement('div');
+                btn.className = `theme-btn rounded overflow-hidden h-10 flex flex-col ${i === 0 ? 'active' : ''}`;
+                btn.innerHTML = `
+                    <div class="flex-1 flex">
+                        <div style="flex:1; background:${t.light}"></div>
+                        <div style="flex:1; background:${t.dark}"></div>
+                    </div>
+                    <div class="text-[9px] text-center bg-[#0d1117] py-0.5 text-gray-300">${t.name}</div>
+                `;
+                btn.onclick = () => {
+                    document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    selectedTheme = t;
+                    document.documentElement.style.setProperty('--board-light', t.light);
+                    document.documentElement.style.setProperty('--board-dark', t.dark);
+                };
+                themeGrid.appendChild(btn);
+            });
+        }
+
+        function startGame() {
+            if(typeof Chess === 'undefined') {
+                alert("ইন্টারনেট থেকে চেস লজিক লাইব্রেরিটি লোড হতে পারেনি! দয়া করে ইন্টারনেট কানেকশন চেক করে পেজটি রিলোড দিন।");
+                return;
+            }
+            
+            state.players.white = document.getElementById('white-name').value || 'সাদা প্লেয়ার';
+            state.players.black = document.getElementById('black-name').value || 'কালো প্লেয়ার';
+            state.mode = document.getElementById('game-mode').value;
+            const time = parseInt(document.getElementById('time-limit').value) * 60;
+            state.timers = { white: time, black: time };
+
+            document.getElementById('white-display-name').innerText = state.players.white;
+            document.getElementById('black-display-name').innerText = state.players.black;
+
+            if(state.mode === 'quick') {
+                document.getElementById('white-timer').classList.remove('hidden');
+                document.getElementById('black-timer').classList.remove('hidden');
+                updateTimerDisplay();
+                startTimer();
+            }
+
+            document.getElementBy
