@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>আল্ট্রা-প্রিমিয়াম চেস - প্রো ম্যাক্স (Ultra Smooth)</title>
+    <title>আল্ট্রা-প্রিমিয়াম চেস - প্রো ম্যাক্স (Human Paced AI)</title>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
@@ -37,7 +37,6 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            /* টেলিগ্রামে ডাবল ট্যাপ জুম এবং ডিফল্ট স্ক্রল অফ করা হলো */
             touch-action: none;
             user-select: none;
             -webkit-user-select: none;
@@ -125,7 +124,6 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            /* মোবাইল স্ক্রিনের টাচ ডিলে রিমুভ */
             touch-action: manipulation; 
         }
 
@@ -171,13 +169,13 @@
             background-size: 95%;
             background-position: center;
             background-repeat: no-repeat;
-            /* হার্ডওয়্যার অ্যাকসিলারেশন (GPU) অ্যাড করা হলো, এতে কোনো ল্যাগ থাকবে না */
-            transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1);
-            filter: drop-shadow(0 4px 5px rgba(0,0,0,0.4));
+            transition: transform 0.3s ease-in-out;
+            filter: drop-shadow(0 3px 4px rgba(0,0,0,0.3)); 
             will-change: transform;
+            -webkit-transform-style: preserve-3d;
+            transform-style: preserve-3d;
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
-            transform-style: preserve-3d;
         }
 
         .modal {
@@ -322,11 +320,9 @@
     </div>
 
     <script>
-        // টেলিগ্রাম মিনি অ্যাপ অপ্টিমাইজেশন
         if (window.Telegram && window.Telegram.WebApp) {
             window.Telegram.WebApp.ready();
             window.Telegram.WebApp.expand(); 
-            // টেলিগ্রামে ভুলে স্ক্রল হয়ে বন্ধ হওয়া ঠেকাতে
             if (window.Telegram.WebApp.isVersionAtLeast('6.1')) {
                 window.Telegram.WebApp.disableVerticalSwipes();
             }
@@ -412,7 +408,7 @@
             state.piecesData.forEach(p => {
                 if (p.color === 'black' && p.active) {
                     const rotation = isFaceToFace ? 'rotate(180deg)' : 'rotate(0deg)';
-                    p.el.style.transform = `translate(${p.c * 100}%, ${p.r * 100}%) ${rotation}`;
+                    p.el.style.transform = `translate3d(${p.c * 100}%, ${p.r * 100}%, 0) ${rotation}`;
                 }
             });
             updateCapturedUI();
@@ -547,7 +543,7 @@
                         pieceDiv.style.backgroundImage = `url('${getPieceUrl(char)}')`;
                         
                         const rotation = (color === 'black' && isFaceToFace) ? 'rotate(180deg)' : 'rotate(0deg)';
-                        pieceDiv.style.transform = `translate(${c * 100}%, ${r * 100}%) ${rotation}`;
+                        pieceDiv.style.transform = `translate3d(${c * 100}%, ${r * 100}%, 0) ${rotation}`;
                         
                         piecesLayer.appendChild(pieceDiv);
                         state.piecesData.push({ id, r, c, color, type: char, el: pieceDiv, active: true });
@@ -624,7 +620,7 @@
                 pieceObj.r = toPos.r;
                 pieceObj.c = toPos.c;
                 const rotation = (pieceObj.color === 'black' && isFaceToFace) ? 'rotate(180deg)' : 'rotate(0deg)';
-                pieceObj.el.style.transform = `translate(${toPos.c * 100}%, ${toPos.r * 100}%) ${rotation}`;
+                pieceObj.el.style.transform = `translate3d(${toPos.c * 100}%, ${toPos.r * 100}%, 0) ${rotation}`;
 
                 if (move.promotion) {
                     pieceObj.type = move.color === 'w' ? 'Q' : 'q';
@@ -641,7 +637,7 @@
                 if (rookObj) {
                     rookObj.c = rookToC;
                     const rRotation = (move.color === 'b' && isFaceToFace) ? 'rotate(180deg)' : 'rotate(0deg)';
-                    rookObj.el.style.transform = `translate(${rookToC * 100}%, ${rookR * 100}%) ${rRotation}`;
+                    rookObj.el.style.transform = `translate3d(${rookToC * 100}%, ${rookR * 100}%, 0) ${rRotation}`;
                 }
             }
 
@@ -651,13 +647,13 @@
             updateUIPanels();
             checkGameOver();
 
-            // এআই এর চাল ট্রিগার (UI আপডেট হওয়ার পর রান করবে যেন হ্যাং না হয়)
+            // এআই এর চাল ট্রিগার (১ সেকেন্ড ডিলে দেওয়া হয়েছে)
             if (!state.gameOver && state.opponentMode === 'computer' && game.turn() === 'b') {
                 setTimeout(() => {
                     requestAnimationFrame(() => {
                         makeComputerMove();
                     });
-                }, 400); 
+                }, 1000); // 1000ms = ১ সেকেন্ড
             }
         }
 
