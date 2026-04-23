@@ -3,13 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>আল্ট্রা-প্রিমিয়াম চেস (Lightweight & Fast)</title>
+    <title>আল্ট্রা-প্রিমিয়াম চেস (Smart & Fast AI)</title>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
     
     <style>
@@ -119,25 +117,10 @@
             align-items: center;
         }
 
-        .interact-square.selected {
-            background-color: var(--highlight);
-        }
-        
-        .in-check {
-            background-color: rgba(255, 0, 0, 0.6) !important;
-        }
-
-        .valid-dot {
-            width: 25%; height: 25%;
-            background-color: rgba(0, 0, 0, 0.4);
-            border-radius: 50%;
-        }
-
-        .valid-capture {
-            width: 85%; height: 85%;
-            border: 5px solid rgba(0, 0, 0, 0.4);
-            border-radius: 50%;
-        }
+        .interact-square.selected { background-color: var(--highlight); }
+        .in-check { background-color: rgba(255, 0, 0, 0.6) !important; }
+        .valid-dot { width: 25%; height: 25%; background-color: rgba(0, 0, 0, 0.4); border-radius: 50%; }
+        .valid-capture { width: 85%; height: 85%; border: 5px solid rgba(0, 0, 0, 0.4); border-radius: 50%; }
 
         .piece {
             position: absolute;
@@ -145,7 +128,6 @@
             background-size: 95%;
             background-position: center;
             background-repeat: no-repeat;
-            /* হালকা ট্রান্সফর্ম, কোনো ভারী শ্যাডো নেই */
             transition: transform 0.2s ease;
             will-change: transform;
         }
@@ -158,19 +140,10 @@
             display: flex; justify-content: center; align-items: center;
         }
         
-        .theme-btn, .piece-set-btn {
-            border: 2px solid transparent;
-            transition: 0.2s;
-            cursor: pointer;
-        }
-        .theme-btn.active, .piece-set-btn.active { 
-            border-color: #2ea043; 
-            transform: scale(1.05); 
-        }
-
+        .theme-btn, .piece-set-btn { border: 2px solid transparent; transition: 0.2s; cursor: pointer; }
+        .theme-btn.active, .piece-set-btn.active { border-color: #2ea043; transform: scale(1.05); }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-
     </style>
 </head>
 <body>
@@ -191,9 +164,9 @@
                 <div id="difficulty-container" class="col-span-2 hidden">
                     <label class="block text-xs text-gray-400 mb-1">কম্পিউটারের লেভেল</label>
                     <select id="ai-difficulty" class="w-full bg-[#0d1117] border border-[#30363d] rounded p-2 text-sm text-white outline-none">
-                        <option value="easy">ইজি (Easy)</option>
-                        <option value="medium">মিডিয়াম (Medium)</option>
-                        <option value="high">হাই (High)</option>
+                        <option value="easy">ইজি (Smart Basic)</option>
+                        <option value="medium">মিডিয়াম (Advanced)</option>
+                        <option value="high">হাই (Master Level)</option>
                     </select>
                 </div>
 
@@ -618,23 +591,49 @@
             updateUIPanels();
             checkGameOver();
 
-            // এআই এর চাল ট্রিগার (মাত্র ৫০ মিলিসেকেন্ড ডিলে, যাতে খুব দ্রুত হয়)
             if (!state.gameOver && state.opponentMode === 'computer' && game.turn() === 'b') {
                 setTimeout(() => {
                     makeComputerMove();
-                }, 500); 
+                }, 200); // 200ms ডিলে, গেম ফাস্ট থাকবে কিন্তু আপনি চাল বুঝতে পারবেন
             }
         }
 
-        /* ---------------- LIGHTWEIGHT AI LOGIC ---------------- */
+        /* ---------------- SMART & FAST AI LOGIC ---------------- */
+        
+        // পজিশনাল লজিক: কোন গুটি কোথায় রাখলে ভালো
+        function getPositionalValue(type, color, r, c) {
+            let score = 0;
+            // বোর্ডের মাঝখানে থাকার সুবিধা (সেন্টার কন্ট্রোল)
+            let centerDist = Math.abs(3.5 - r) + Math.abs(3.5 - c);
+            
+            if (type === 'n' || type === 'b' || type === 'q') {
+                score += (7 - centerDist) * 3; // ঘোড়া বা মন্ত্রী সেন্টারে থাকলে বোনাস পয়েন্ট পাবে
+            }
+            if (type === 'p') {
+                // বোড়ে (Pawn) সামনের দিকে গেলে বোনাস পাবে
+                if (color === 'w') score += (7 - r) * 5;
+                else score += r * 5;
+                
+                // মাঝখানের বোড়ে বেশি গুরুত্বপূর্ণ
+                if (c >= 3 && c <= 4) score += 10;
+            }
+            if (type === 'k') {
+                // রাজা কর্নারে সুরক্ষিত থাকে
+                score += centerDist * 2; 
+            }
+            return score;
+        }
+
         function evaluateBoard(g) {
             let score = 0;
-            const vals = {'p': 10, 'n': 30, 'b': 30, 'r': 50, 'q': 90, 'k': 900};
+            const vals = {'p': 100, 'n': 300, 'b': 300, 'r': 500, 'q': 900, 'k': 10000};
             const b = g.board();
             for(let r=0; r<8; r++){
                 for(let c=0; c<8; c++){
                     if(b[r][c]){
                         let val = vals[b[r][c].type];
+                        // গুটির আসল দামের সাথে পজিশন বোনাস যোগ করা হলো (এতেই এআই প্রো হয়ে যাবে!)
+                        val += getPositionalValue(b[r][c].type, b[r][c].color, r, c);
                         score += (b[r][c].color === 'w' ? val : -val);
                     }
                 }
@@ -642,37 +641,47 @@
             return score;
         }
 
+        // Alpha-Beta Pruning (হিসেব ফাস্ট করার অ্যালগরিদম)
+        function minimax(g, depth, alpha, beta, isMaximizing) {
+            if(depth === 0 || g.game_over()) return evaluateBoard(g);
+            let moves = g.moves();
+            if(isMaximizing) { 
+                let maxEval = -Infinity;
+                for(let i=0; i<moves.length; i++) {
+                    g.move(moves[i]);
+                    let ev = minimax(g, depth-1, alpha, beta, false);
+                    g.undo();
+                    maxEval = Math.max(maxEval, ev);
+                    alpha = Math.max(alpha, ev);
+                    if(beta <= alpha) break;
+                }
+                return maxEval;
+            } else { 
+                let minEval = Infinity;
+                for(let i=0; i<moves.length; i++) {
+                    g.move(moves[i]);
+                    let ev = minimax(g, depth-1, alpha, beta, true);
+                    g.undo();
+                    minEval = Math.min(minEval, ev);
+                    beta = Math.min(beta, ev);
+                    if(beta <= alpha) break;
+                }
+                return minEval;
+            }
+        }
+
         function getBestMove(g, depth) {
             let moves = g.moves({verbose: true});
             if(moves.length === 0) return null;
             
             let bestMove = moves[0];
-            let bestValue = Infinity; 
+            let bestValue = Infinity; // কম্পিউটার কালো, তাই মান নেগেটিভ করতে চাইবে
             
-            // একই চাল এড়াতে র্যান্ডমাইজ করা হলো
             moves.sort(() => Math.random() - 0.5);
 
             for(let i=0; i<moves.length; i++) {
                 g.move(moves[i]);
-                
-                let moveVal = 0;
-                if(depth === 1) {
-                    moveVal = evaluateBoard(g);
-                } else {
-                    // Depth 2 এর জন্য হালকা ক্যালকুলেশন
-                    let wMoves = g.moves();
-                    let maxW = -Infinity;
-                    if(wMoves.length === 0) maxW = g.in_checkmate() ? -9999 : 0;
-                    else {
-                        for(let j=0; j<wMoves.length; j++){
-                            g.move(wMoves[j]);
-                            maxW = Math.max(maxW, evaluateBoard(g));
-                            g.undo();
-                        }
-                    }
-                    moveVal = maxW;
-                }
-                
+                let moveVal = minimax(g, depth - 1, -Infinity, Infinity, true); 
                 g.undo();
                 
                 if(moveVal < bestValue) {
@@ -685,21 +694,19 @@
 
         function makeComputerMove() {
             if (state.gameOver) return;
-            const moves = game.moves({ verbose: true });
-            if (moves.length === 0) return;
-
             let chosenMove = null;
+            
             if (state.difficulty === 'easy') {
-                // একদম র্যান্ডম চাল (খুবই দ্রুত)
-                chosenMove = moves[Math.floor(Math.random() * moves.length)];
-            } 
-            else if (state.difficulty === 'medium') {
-                // লেভেল ১ (দ্রুত ভাববে)
+                // Depth 1: এক চাল দেখবে, কিন্তু পজিশনাল বোনাসের কারণে মাথা খাটিয়ে খেলবে
                 chosenMove = getBestMove(game, 1); 
             } 
-            else {
-                // লেভেল ২ (একটু বুদ্ধি খাটাবে, তবে ল্যাগ করবে না)
+            else if (state.difficulty === 'medium') {
+                // Depth 2: দুই চাল দেখবে। 
                 chosenMove = getBestMove(game, 2); 
+            } 
+            else {
+                // Depth 3: তিন চাল দেখবে। মাস্টার লেভেল।
+                chosenMove = getBestMove(game, 3); 
             }
             executeMove(chosenMove.from, chosenMove.to);
         }
